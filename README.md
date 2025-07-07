@@ -57,9 +57,9 @@ El lenguaje Tan utiliza el sistema vigesimal (base 20) maya:
 
 ## 👥 Autores
 
-- **Edrei**
-- **Isaac Ortiz Zaldivar**
-- **Richard**
+- **Edrei Enrique Lizama Solis**
+- **Isaac Alejandro Ortiz Zaldivar**
+- **Ricardo Esteban Maas Tuyub**
 
 <p align="center">
   Hecho con ❤️ en Mérida, Yucatán 🇲🇽
