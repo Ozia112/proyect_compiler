@@ -1,20 +1,20 @@
 # === Compilador del Lenguaje Tan ===
-# Basado en numeración maya (base 20)
+# Basado en numeracion maya (base 20)
 
 import re
 
 # --------------------------------------
-# 1. Análisis Léxico
+# 1. Analisis Lexico
 # --------------------------------------
 
-# Función para convertir números mayas a decimal
+# Funcion para convertir numeros mayas a decimal
 def maya_to_decimal(maya_num):
     """
-    Convierte un número maya a decimal
+    Convierte un numero maya a decimal
     . = 1
     | = 5
     0 = 0
-    , = separador de bloques (múltiplos de 20)
+    , = separador de bloques (multiplos de 20)
     """
     # Eliminar espacios
     maya_num = maya_num.strip()
@@ -51,9 +51,9 @@ def maya_to_decimal(maya_num):
     
     return total
 
-# Especificación de tokens
+# Especificacion de tokens
 token_specification = [
-    ('MAYA_NUM', r'(?:[.|]+\s*|0)(?:\s*,\s*(?:[.|]+\s*|0))*'),  # Números mayas
+    ('MAYA_NUM', r'(?:[.|]+\s*|0)(?:\s*,\s*(?:[.|]+\s*|0))*'),  # Numeros mayas
     ('XIIB',     r'xiib'),                                      # let
     ('TSIIBIL',  r'tsiibil'),                                   # print
     ('KEET',     r'keet'),                                      # =
@@ -86,19 +86,17 @@ def tokenize(code):
             # No tokenizar palabras reservadas como identificadores
             if value not in ['xiib', 'tsiibil', 'keet']:
                 tokens.append(('IDENT', value))
-        elif kind == 'NEWLINE':
-            continue
-        elif kind == 'SKIP':
+        elif kind in ('NEWLINE', 'SKIP'):
             continue
         elif kind == 'MISMATCH':
-            raise RuntimeError(f'Carácter inesperado {value!r}')
+            raise RuntimeError(f'Caracter inesperado {value!r}')
     
     return tokens
 
 # --------------------------------------
-# 2. Análisis Sintáctico
+# 2. Analisis Sintactico
 # --------------------------------------
-# Gramática:
+# Gramatica:
 #   <program>       ::= <statement> { <statement> }
 #   <statement>     ::= "xiib" <identifier> "keet" <expression>
 #                   |   "tsiibil" "[" <expression> "]"
@@ -113,11 +111,20 @@ class Parser:
 
     def consume(self, expected_type=None):
         if self.pos >= len(self.tokens):
-            raise SyntaxError('Final inesperado del programa')
-        
+            if expected_type == 'RPAREN':
+                raise SyntaxError('Se esperaba cerrar expresion con ]')
+            elif expected_type == 'LPAREN':
+                raise SyntaxError('Se esperaba abrir expresion con [')
+            else:
+                raise SyntaxError('Final inesperado del programa')
         token = self.tokens[self.pos]
         if expected_type and token[0] != expected_type:
-            raise SyntaxError(f'Se esperaba {expected_type}, se obtuvo {token[0]}')
+            if expected_type == 'RPAREN':
+                raise SyntaxError(f'Falta cerrar ] (se obtuvo {token[0]})')
+            elif expected_type == 'LPAREN':
+                raise SyntaxError(f'Falta abrir [ (se obtuvo {token[0]})')
+            else:
+                raise SyntaxError(f'Se esperaba {expected_type}, se obtuvo {token[0]}')
         self.pos += 1
         return token
 
@@ -148,7 +155,7 @@ class Parser:
             self.consume('RPAREN')
             return ('print', expr)
         else:
-            raise SyntaxError(f'Declaración inválida: {self.peek()}')
+            raise SyntaxError(f'Declaracion invalida: {self.peek()}')
 
     def expression(self):
         left = self.term()
@@ -181,10 +188,10 @@ class Parser:
             self.consume('RPAREN')
             return expr
         else:
-            raise SyntaxError(f'Factor inválido: {token}')
+            raise SyntaxError(f'Factor invalido: {token}')
 
 # --------------------------------------
-# 3. Generación de Código
+# 3. Generacion de Codigo
 # --------------------------------------
 
 def generate_python(ast):
@@ -209,103 +216,36 @@ def gen_expr(expr):
         return f"({gen_expr(expr[1])} {op} {gen_expr(expr[2])})"
 
 # --------------------------------------
-# Función Principal del Compilador
+# Funcion Principal del Compilador
 # --------------------------------------
 
 def compile_tan(code):
     print("=== COMPILADOR DEL LENGUAJE TAN ===\n")
-    print("Código fuente:")
+    print("Codigo fuente:")
     print(code)
     
     try:
-        # Análisis léxico
+        # Analisis lexico
         tokens = tokenize(code)
         print("\nTokens generados:")
         for token in tokens:
             print(f"  {token}")
         
-        # Análisis sintáctico
+        # Analisis sintactico
         parser = Parser(tokens)
         ast = parser.parse()
-        print("\nÁrbol Sintáctico Abstracto (AST):")
+        print("\nArbol Sintactico Abstracto (AST):")
         for node in ast:
             print(f"  {node}")
         
-        # Generación de código
+        # Generacion de codigo
         py_code = generate_python(ast)
-        print("\nCódigo Python generado:")
+        print("\nCodigo Python generado:")
         print(py_code)
         
         return py_code
         
     except Exception as e:
-        print(f"\nError durante la compilación: {e}")
+        print(f"\nError durante la compilacion: {e}")
         return None
 
-# --------------------------------------
-# Casos de Prueba
-# --------------------------------------
-
-if __name__ == '__main__':
-    print("=== CASOS DE PRUEBA POSITIVOS ===\n")
-    
-    # Caso 1: Ejemplo básico del PDF
-    print("Caso 1: Ejemplo del PDF")
-    ejemplo1 = """
-xiib x keet |
-xiib y keet . , .|
-tsiibil [x + y * ..]
-"""
-    compiled = compile_tan(ejemplo1)
-    if compiled:
-        print("\n--- Ejecutando código compilado ---")
-        exec(compiled)
-    
-    # Caso 2: Operaciones más complejas
-    print("\n\nCaso 2: Operaciones más complejas")
-    ejemplo2 = """
-xiib a keet ..||
-xiib b keet 0 , .
-xiib c keet a + b
-tsiibil [c]
-tsiibil [a * .. - b / |]
-"""
-    compiled = compile_tan(ejemplo2)
-    if compiled:
-        print("\n--- Ejecutando código compilado ---")
-        exec(compiled)
-    
-    # Caso 3: Número grande (160,000)
-    print("\n\nCaso 3: Número grande")
-    ejemplo3 = """
-xiib grande keet 0 , 0 , 0 , 0 , .
-tsiibil [grande]
-"""
-    compiled = compile_tan(ejemplo3)
-    if compiled:
-        print("\n--- Ejecutando código compilado ---")
-        exec(compiled)
-    
-    print("\n\n=== CASOS DE PRUEBA NEGATIVOS ===\n")
-    
-    # Caso 4: Error sintáctico - falta keet
-    print("Caso 4: Error sintáctico - falta 'keet'")
-    ejemplo_error1 = """
-xiib x |
-"""
-    compile_tan(ejemplo_error1)
-    
-    # Caso 5: Error sintáctico - paréntesis sin cerrar
-    print("\n\nCaso 5: Error sintáctico - paréntesis sin cerrar")
-    ejemplo_error2 = """
-xiib x keet |
-tsiibil [x + ..
-"""
-    compile_tan(ejemplo_error2)
-    
-    # Caso 6: Error léxico - carácter inválido
-    print("\n\nCaso 6: Error léxico - carácter inválido")
-    ejemplo_error3 = """
-xiib x keet @
-"""
-    compile_tan(ejemplo_error3)
